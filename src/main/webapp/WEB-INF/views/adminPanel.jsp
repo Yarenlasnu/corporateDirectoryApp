@@ -27,10 +27,6 @@
             gap: 10px;
         }
 
-        .lang-buttons form {
-            display: inline;
-        }
-
         .form-row {
             display: flex;
             gap: 20px;
@@ -117,13 +113,14 @@
             <input type="hidden" name="lang" value="en"/>
             <button type="submit">🇬🇧 EN</button>
         </form>
-        <form action="/logout" method="post">
-            <button type="submit"><spring:message code="label.logout"/></button>
+        <form action="/admin/logout" method="post">
+            <button type="submit">Çıkış Yap</button>
         </form>
     </div>
 </header>
 
 <div class="form-row">
+    <!-- Fakülte Ekle -->
     <div class="section">
         <h2><spring:message code="label.add.faculty"/></h2>
         <form action="/admin/fakulte/ekle" method="post">
@@ -146,74 +143,114 @@
         </table>
     </div>
 
+    <!-- Bölüm Ekle -->
     <div class="section">
         <h2><spring:message code="label.add.department"/></h2>
-        <form action="/admin/bolum/ekle" method="post">
+        <form method="get" action="/admin/panel">
             <label><spring:message code="label.select.faculty"/></label>
-            <select name="fakulteId" required>
+            <select name="fakulteId" required onchange="this.form.submit()">
                 <c:forEach var="fakulte" items="${fakulteListesi}">
-                    <option value="${fakulte.id}">${fakulte.ad}</option>
+                    <option value="${fakulte.id}" <c:if test="${fakulte.id == seciliFakulteId}">selected</c:if>>${fakulte.ad}</option>
                 </c:forEach>
             </select>
-            <input type="text" name="ad" placeholder="<spring:message code='label.department.name'/>" required/>
-            <button type="submit"><spring:message code="label.add.button"/></button>
         </form>
+
+<c:if test="${not empty seciliFakulteId}">
+    <form action="/admin/bolum/ekle" method="post">
+        <input type="hidden" name="fakulteId" value="${seciliFakulteId}"/>
+        <input type="text" name="ad" placeholder="<spring:message code='label.department.name'/>" required/>
+        <button type="submit"><spring:message code="label.add.button"/></button>
+    </form>
+</c:if>
+
+
+
         <table>
             <tr><th>Ad</th><th>İşlem</th></tr>
             <c:forEach var="b" items="${bolumListesi}">
-                <tr>
-                    <td>${b.ad}</td>
-                    <td>
-                        <form method="post" action="/admin/bolum/sil">
-                            <input type="hidden" name="id" value="${b.id}" />
-                            <button class="icon-button">❌</button>
-                        </form>
-                    </td>
-                </tr>
+                <c:if test="${b.fakulteId == seciliFakulteId}">
+                    <tr>
+                        <td>${b.ad}</td>
+                        <td>
+                            <form method="post" action="/admin/bolum/sil">
+                                <input type="hidden" name="id" value="${b.id}" />
+                                <input type="hidden" name="fakulteId" value="${seciliFakulteId}" />
+                                <button class="icon-button">❌</button>
+                            </form>
+                        </td>
+                    </tr>
+                </c:if>
             </c:forEach>
         </table>
     </div>
 </div>
 
+<!-- Personel Ekle -->
 <div class="section">
     <h2><spring:message code="label.add.personnel"/></h2>
-    <form action="/admin/personel/ekle" method="post">
+
+    <form method="get" action="/admin/panel" id="fakulteForm">
         <label><spring:message code="label.select.faculty"/></label>
-        <select name="fakulteId" id="fakulteDropdown">
+        <select name="fakulteId" required onchange="document.getElementById('fakulteForm').submit()">
+            <option disabled ${empty seciliFakulteId ? 'selected' : ''}>-- Fakülte Seçin --</option>
             <c:forEach var="fakulte" items="${fakulteListesi}">
-                <option value="${fakulte.id}">${fakulte.ad}</option>
+                <option value="${fakulte.id}" <c:if test="${fakulte.id == seciliFakulteId}">selected</c:if>>${fakulte.ad}</option>
             </c:forEach>
         </select>
-
-        <label><spring:message code="label.select.department"/></label>
-        <select name="bolumId" id="bolumDropdown">
-            <c:forEach var="bolum" items="${bolumListesi}">
-                <option value="${bolum.id}">${bolum.ad}</option>
-            </c:forEach>
-        </select>
-
-        <input type="text" name="ad" placeholder="<spring:message code='label.firstname'/>" required/>
-        <input type="text" name="soyad" placeholder="<spring:message code='label.lastname'/>" required/>
-        <input type="text" name="telefon" placeholder="<spring:message code='label.phone.placeholder'/>" required/>
-        <button type="submit"><spring:message code="label.add.button"/></button>
     </form>
 
+    <c:if test="${not empty seciliFakulteId}">
+        <form method="get" action="/admin/panel" id="bolumForm">
+            <input type="hidden" name="fakulteId" value="${seciliFakulteId}"/>
+            <label><spring:message code="label.select.department"/></label>
+            <select name="seciliBolumId" required onchange="document.getElementById('bolumForm').submit()">
+                <option disabled ${empty seciliBolumId ? 'selected' : ''}>-- Bölüm Seçin --</option>
+                <c:forEach var="b" items="${bolumListesi}">
+                    <c:if test="${b.fakulteId == seciliFakulteId}">
+                        <option value="${b.id}" <c:if test="${b.id == seciliBolumId}">selected</c:if>>${b.ad}</option>
+                    </c:if>
+                </c:forEach>
+            </select>
+        </form>
+    </c:if>
+
+    <c:if test="${not empty seciliBolumId}">
+        <form action="/admin/personel/ekle" method="post">
+            <input type="hidden" name="fakulteId" value="${seciliFakulteId}"/>
+            <input type="hidden" name="bolumId" value="${seciliBolumId}"/>
+
+            <input type="text" name="ad" placeholder="<spring:message code='label.firstname'/>" required/>
+            <input type="text" name="soyad" placeholder="<spring:message code='label.lastname'/>" required/>
+            <input 
+                type="text" 
+                name="telefon" 
+                placeholder="Örn: 0380 542 10 36 veya 0380 542 10 36 dahili : 4749" 
+                required 
+                pattern="^\d{4} \d{3} \d{2} \d{2}( dahili : \d+)?$"
+                title="Geçerli format: 0380 542 10 36 veya 0380 542 10 36 dahili : 4749"
+            />
+            <button type="submit"><spring:message code="label.add.button"/></button>
+        </form>
+    </c:if>
+
     <table>
-        <tr>
-            <th>Ad</th><th>Soyad</th><th>Telefon</th><th>İşlem</th>
-        </tr>
+        <tr><th>Ad</th><th>Soyad</th><th>Telefon</th><th>İşlem</th></tr>
         <c:forEach var="p" items="${personelListesi}">
-            <tr>
-                <td>${p.ad}</td>
-                <td>${p.soyad}</td>
-                <td>${p.telefon}</td>
-                <td>
-                    <form method="post" action="/admin/personel/sil">
-                        <input type="hidden" name="id" value="${p.id}" />
-                        <button class="icon-button">❌</button>
-                    </form>
-                </td>
-            </tr>
+            <c:if test="${p.bolum.id == seciliBolumId}">
+                <tr>
+                    <td>${p.ad}</td>
+                    <td>${p.soyad}</td>
+                    <td>${p.telefon}</td>
+                    <td>
+                        <form method="post" action="/admin/personel/sil">
+                            <input type="hidden" name="id" value="${p.id}" />
+                            <input type="hidden" name="fakulteId" value="${seciliFakulteId}" />
+                            <input type="hidden" name="bolumId" value="${seciliBolumId}" />
+                            <button class="icon-button">❌</button>
+                        </form>
+                    </td>
+                </tr>
+            </c:if>
         </c:forEach>
     </table>
 </div>

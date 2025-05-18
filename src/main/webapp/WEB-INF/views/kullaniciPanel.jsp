@@ -128,6 +128,26 @@
         th {
             background-color: #eeeeee;
         }
+
+        .back-button-container {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .back-button {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background-color: #1a252f;
+        }
     </style>
 </head>
 <body>
@@ -139,11 +159,11 @@
     <div class="lang-buttons">
         <form action="/changeLanguage" method="get">
             <input type="hidden" name="lang" value="tr"/>
-            <button type="submit">🇹🇷 TR</button>
+            <button type="submit">🇹🇷 <spring:message code="label.language.tr"/></button>
         </form>
         <form action="/changeLanguage" method="get">
             <input type="hidden" name="lang" value="en"/>
-            <button type="submit">🇬🇧 EN</button>
+            <button type="submit">🇬🇧 <spring:message code="label.language.en"/></button>
         </form>
     </div>
 </header>
@@ -154,9 +174,9 @@
     <input type="text" name="arama" id="aramaInput"
            value="${fn:escapeXml(param.arama)}"
            placeholder="<spring:message code='label.search.placeholder'/>"/>
-    
+
     <c:if test="${not empty param.arama}">
-        <button type="button" class="clear-btn" onclick="document.getElementById('aramaInput').value='';">✖</button>
+        <button type="button" class="clear-btn" onclick="document.getElementById('aramaInput').value=''; this.form.submit();">✖</button>
     </c:if>
 
     <button type="submit"><spring:message code="label.search.button"/></button>
@@ -166,27 +186,29 @@
 
 <c:choose>
     <c:when test="${not empty sonucListesi}">
-        <div class="result-count">${fn:length(sonucListesi)} <spring:message code="label.result.count"/></div>
+        <div class="result-count">
+            <spring:message code="label.result.count" arguments="${fn:length(sonucListesi)}"/>
+        </div>
         <table>
             <thead>
-                <tr>
-                    <th><spring:message code="label.firstname"/></th>
-                    <th><spring:message code="label.lastname"/></th>
-                    <th><spring:message code="label.faculty.name"/></th>
-                    <th><spring:message code="label.department.name"/></th>
-                    <th><spring:message code="label.phone"/></th>
-                </tr>
+            <tr>
+                <th><spring:message code="label.firstname"/></th>
+                <th><spring:message code="label.lastname"/></th>
+                <th><spring:message code="label.faculty.name"/></th>
+                <th><spring:message code="label.department.name"/></th>
+                <th><spring:message code="label.phone"/></th>
+            </tr>
             </thead>
             <tbody>
-                <c:forEach var="personel" items="${sonucListesi}">
-                    <tr>
-                        <td>${personel.ad}</td>
-                        <td>${personel.soyad}</td>
-                        <td>${personel.fakulteAd}</td>
-                        <td>${personel.bolumAd}</td>
-                        <td>${personel.telefon}</td>
-                    </tr>
-                </c:forEach>
+            <c:forEach var="personel" items="${sonucListesi}">
+                <tr>
+                    <td>${personel.ad}</td>
+                    <td>${personel.soyad}</td>
+                    <td>${personel.fakulteAd}</td>
+                    <td>${personel.bolumAd}</td>
+                    <td>${personel.telefon}</td>
+                </tr>
+            </c:forEach>
             </tbody>
         </table>
     </c:when>
@@ -196,6 +218,15 @@
         </c:if>
     </c:otherwise>
 </c:choose>
+
+<div class="back-button-container">
+    <form action="/admin/login" method="get">
+    <button type="submit" class="back-button">
+    ← <spring:message code="label.back.to.login"/>
+</button>
+
+    </form>
+</div>
 
 </body>
 </html>
