@@ -1,22 +1,30 @@
 package com.kurumsalrehber.controller;
 
+import com.kurumsalrehber.entity.Admin;
 import com.kurumsalrehber.service.IBolumService;
 import com.kurumsalrehber.service.IFakulteService;
 import com.kurumsalrehber.service.IPersonelService;
+import com.kurumsalrehber.service.impl.AdminService;
+
 import jakarta.servlet.http.HttpSession;
+import lombok.Data;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Data
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-
-    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     @Autowired
     private IFakulteService fakulteService;
@@ -26,26 +34,101 @@ public class AdminController {
 
     @Autowired
     private IPersonelService personelService;
+    
+    @Autowired
+    private AdminService adminService;
+    
+    @Value("${admin.username}")
+    private String adminUsername;
 
+    @Value("${admin.password}")
+    private String adminPassword;
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    
+    
     @GetMapping("/login")
     public String loginSayfasi() {
         logger.info("Login sayfası görüntüleniyor.");
         return "login";
     }
+    
+    private boolean isPasswordStrong(String password) {
+        return password != null &&
+               password.length() >= 8 &&
+               password.matches(".*[A-Z].*") &&
+               password.matches(".*[a-z].*") &&
+               password.matches(".*\\d.*") &&
+               password.matches(".*[!@#$%^&*].*");
+    }
 
     @PostMapping("/login")
     public String loginKontrol(@RequestParam String username,
-                                @RequestParam String password,
-                                HttpSession session) {
-        logger.info("Giriş denemesi: Kullanıcı adı = {}", username);
-        if ("admin".equals(username) && "1234".equals(password)) {
-            session.setAttribute("admin", true);
-            logger.info("Giriş başarılı.");
-            return "redirect:/admin/panel";
-        } else {
-            logger.warn("Geçersiz giriş denemesi.");
-            return "redirect:/admin/login?error=true";
+                               @RequestParam String password,
+                               HttpSession session) {
+
+        logger.info("Giriş denemesi: {}", username);
+
+        Optional<Admin> adminOpt = adminService.getByUsername(username);
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+            if (passwordEncoder.matches(password, admin.getPassword())) {
+                session.setAttribute("admin", true);
+                logger.info("Giriş başarılı.");
+                return "redirect:/admin/panel";
+            }
         }
+
+        logger.warn("Geçersiz giriş.");
+        return "redirect:/admin/login?error=true";
+    }
+
+
+    @GetMapping("/change-password")
+    public String showChangePasswordPage() {
+        return "changePassword";
+    }
+
+    @PostMapping("/change-password")
+    public String changePassword(@RequestParam String currentPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String confirmPassword,
+                                 HttpSession session,
+                                 Model model) {
+
+        Optional<Admin> adminOpt = adminService.getByUsername("admin");
+        if (adminOpt.isEmpty()) {
+            model.addAttribute("error", "Admin bulunamadı.");
+            return "changePassword";
+        }
+
+        Admin admin = adminOpt.get();
+
+        // Mevcut şifre kontrolü
+        if (!passwordEncoder.matches(currentPassword, admin.getPassword())) {
+            model.addAttribute("error", "Mevcut şifre hatalı.");
+            return "changePassword";
+        }
+
+        // Yeni şifre güvenli mi?
+        if (!isPasswordStrong(newPassword)) {
+            model.addAttribute("error", "Yeni şifre zayıf. En az 8 karakter, büyük harf, küçük harf, rakam ve özel karakter içermelidir.");
+            return "changePassword";
+        }
+
+        // Yeni şifreler aynı mı?
+        if (!newPassword.equals(confirmPassword)) {
+            model.addAttribute("error", "Yeni şifreler eşleşmiyor.");
+            return "changePassword";
+        }
+
+        // Şifre güncelleme
+        String encodedNewPassword = passwordEncoder.encode(newPassword);
+        adminService.updatePassword(admin, encodedNewPassword);
+
+        model.addAttribute("success", "Şifreniz başarıyla güncellendi.");
+        return "changePassword";
     }
 
     @GetMapping("/panel")

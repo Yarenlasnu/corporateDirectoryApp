@@ -113,6 +113,7 @@
             <input type="hidden" name="lang" value="en"/>
             <button type="submit">🇬🇧 EN</button>
         </form>
+
         <form action="/admin/logout" method="post">
             <button type="submit">Çıkış Yap</button>
         </form>

@@ -93,18 +93,18 @@
             margin-bottom: 10px;
         }
 
-        button:hover {
-            background-color: #1a252f;
-        }
+		.alt-buton {
+  		  background-color: #e0e0e0;
+  		  color: #2c3e50;
+   		 font-weight: bold;
+		}
+		.alt-buton:hover {
+   		 background-color: #d0d0d0;
+		}
 
-        .alt-buton {
-            background-color: #ccc;
-            color: #2c3e50;
-        }
-
-        .alt-buton:hover {
-            background-color: #bbb;
-        }
+		.alt-buton:hover {
+   		 background-color: #bbb;
+	}
 
         .error-box {
             background-color: #f8d7da;
@@ -147,6 +147,12 @@
             ⚠️ <span><spring:message code="label.login.error"/></span>
         </div>
     </c:if>
+    
+    <c:if test="${param.shortPassword == 'true'}">
+        <div class="error-box">
+            ⚠️ <span>Şifre en az 8 karakter, bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter (!@#$%^&*) içermelidir.</span>
+        </div>
+    </c:if>
 
     <form action="/admin/login" method="post">
         <label for="username"><spring:message code="label.username"/></label>
@@ -163,6 +169,12 @@
             <spring:message code="label.login.continue"/>
         </button>
     </form>
+<form action="/admin/change-password" method="get">
+    <button type="submit" class="alt-buton">🔐 <spring:message code="label.change.password.button"/></button>
+</form>
+
+
+
 </div>
 
 </body>
